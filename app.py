@@ -14,6 +14,8 @@ from flask import (Flask, Response, abort, flash, redirect, render_template,
                    request, send_file, send_from_directory, session, url_for)
 from PIL import Image
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+load_dotenv()
 
 from db import get_db
 from payment_config import PAYMENT_ACCOUNTS
@@ -23,7 +25,7 @@ from mailer import (build_receipt_pdf, send_booking_confirmation,
                     send_verification_code, send_welcome_email)
 
 app = Flask(__name__)
-app.secret_key = 'palitan-mo-ito-ng-mahabang-random-text-123'
+app.secret_key = os.getenv('SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # max 5 MB per upload
 
 POSTER_FOLDER = os.path.join(app.root_path, 'static', 'posters')
