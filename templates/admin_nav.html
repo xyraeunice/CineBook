@@ -1,0 +1,28 @@
+<div class="admin-tabs">
+  <a href="{{ url_for('admin_dashboard') }}"
+     class="{{ 'active' if request.endpoint == 'admin_dashboard' }}">
+    <i class="fa-solid fa-gauge-high me-1"></i>Dashboard
+  </a>
+  <a href="{{ url_for('admin_movies') }}"
+     class="{{ 'active' if request.endpoint in ('admin_movies', 'admin_movie_add', 'admin_movie_edit') }}">
+    <i class="fa-solid fa-film me-1"></i>Movies
+  </a>
+  <a href="{{ url_for('admin_bookings') }}"
+     class="{{ 'active' if request.endpoint == 'admin_bookings' }}">
+    <i class="fa-solid fa-ticket me-1"></i>Bookings
+  </a>
+  <a href="{{ url_for('admin_users') }}"
+     class="{{ 'active' if request.endpoint in ('admin_users', 'admin_user_detail') }}">
+    <i class="fa-solid fa-users me-1"></i>Users
+  </a>
+  <a href="{{ url_for('admin_audit') }}"
+     class="{{ 'active' if request.endpoint == 'admin_audit' }}">
+    <i class="fa-solid fa-clipboard-list me-1"></i>Audit Log
+  </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category if category in ('success', 'danger') else 'info' }}">{{ message }}</div>
+  {% endfor %}
+{% endwith %}

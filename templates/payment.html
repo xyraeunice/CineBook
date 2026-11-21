@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+    <div class="row g-5">
+
+      <div class="col-lg-5">
+        <div class="summary-card">
+          <img src="{{ url_for('static', filename='posters/' ~ data.movie.poster) }}" alt="{{ data.movie.title }}">
+          <div class="summary-body">
+            <h4>{{ data.movie.title }}</h4>
+            <div class="summary-line"><i class="fa-solid fa-building"></i>{{ data.cinema }}</div>
+            <div class="summary-line"><i class="fa-solid {{ 'fa-crown' if data.cinema_type == 'VIP' else 'fa-film' }}"></i>{{ data.cinema_label }}</div>
+            <div class="summary-line"><i class="fa-regular fa-calendar"></i>{{ data.formatted_date }}</div>
+            <div class="summary-line"><i class="fa-regular fa-clock"></i>{{ data.showtime }}</div>
+            <div class="summary-line"><i class="fa-solid fa-couch"></i>Seats: {{ data.seats|join(', ') }}</div>
+            <div class="summary-line"><i class="fa-solid fa-ticket"></i>{{ data.tickets }} ticket{{ 's' if data.tickets > 1 else '' }} &times; ₱{{ "%.2f"|format(data.unit_price) }}</div>
+            {% if data.features %}
+            <div class="summary-line"><i class="fa-solid fa-couch"></i>{{ data.features|join(' &bull; ')|safe }}</div>
+            {% endif %}
+            {% if data.perks %}
+            <div class="perk-banner"><i class="fa-solid fa-gift me-2"></i>{{ data.perks }} included with your VIP booking</div>
+            {% endif %}
+            <div class="summary-total">
+              <span>Total</span>
+              <strong>₱{{ "%.2f"|format(data.total) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7">
+        <p class="section-label">ONLINE PAYMENT</p>
+        <h2 class="mb-4">Pay and upload your receipt</h2>
+
+        <div class="auth-card dark-form">
+          {% if error %}
+          <div class="alert alert-danger">{{ error }}</div>
+          {% endif %}
+
+          {% set icons = {'GCash': 'fa-mobile-screen', 'Maya': 'fa-wallet'} %}
+
+          <form method="POST" action="{{ url_for('payment') }}" enctype="multipart/form-data" id="payForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="movie_id" value="{{ data.movie.id }}">
+            <input type="hidden" name="cinema" value="{{ data.cinema }}">
+            <input type="hidden" name="cinema_type" value="{{ data.cinema_type }}">
+            <input type="hidden" name="date" value="{{ data.booking_date }}">
+            <input type="hidden" name="showtime" value="{{ data.showtime }}">
+            <input type="hidden" name="tickets" value="{{ data.tickets }}">
+            <input type="hidden" name="seat_numbers" value="{{ data.seats|join(',') }}">
+
+            <label class="form-label">1. Choose a payment method</label>
+            {% for m in methods %}
+            <label class="pay-option">
+              <input type="radio" name="payment_method" value="{{ m }}" required
+                     {% if m == selected_method %}checked{% endif %}>
+              <i class="fa-solid {{ icons.get(m, 'fa-money-bill') }}"></i>
+              <span>{{ m }}</span>
+            </label>
+            {% endfor %}
+
+            {% for m in methods %}
+            <div class="qr-panel d-none" data-method="{{ m }}">
+              <p class="mb-2">Scan this QR code with {{ m }} and pay
+                <strong>₱{{ "%.2f"|format(data.total) }}</strong></p>
+              <img src="{{ url_for('static', filename='qr/' ~ accounts[m].qr) }}"
+                   alt="{{ m }} QR code" class="qr-img"
+                   onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+              <p class="d-none text-warning small mb-2">QR code unavailable. Please send your payment using the account details below.</p>
+              <div class="small text-secondary">{{ accounts[m].name }} &bull; {{ accounts[m].number }}</div>
+            </div>
+            {% endfor %}
+
+            <hr class="my-4">
+
+            <label class="form-label">2. Upload your proof of payment</label>
+            <div class="mb-3">
+              <label class="form-label small text-secondary" for="reference_no" id="refLabel">Reference No. / Reference ID</label>
+              <input type="text" class="form-control" name="reference_no" id="reference_no"
+                     maxlength="13" value="{{ reference_no }}" autocomplete="off"
+                     placeholder="Choose a payment method first" required>
+              <div class="form-text" id="refHint">Choose a payment method above. GCash uses a Reference No., Maya uses a Reference ID.</div>
+              <div class="text-danger small d-none" id="refError"></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small text-secondary" for="receipt">Receipt screenshot (upload your payment receipt)</label>
+              <input type="file" class="form-control" name="receipt" id="receipt"
+                     accept="image/png,image/jpeg,image/webp" required>
+              <img id="receiptPreview" class="receipt-preview d-none" alt="Receipt preview">
+            </div>
+
+            <p class="small text-secondary">
+              After you confirm, your booking will be <strong>pending</strong> until our admin
+              checks your receipt screenshot and reference number. Your seats stay reserved while we verify.
+            </p>
+
+            <button type="submit" name="confirm_booking" value="1" id="confirmBtn"
+                    class="btn btn-brand btn-lg w-100" disabled>
+              Confirm Booking
+            </button>
+          </form>
+
+          <a href="{{ url_for('booking', movie_id=data.movie.id) }}" class="btn btn-ghost w-100 mt-2">Start over</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  const MAX_BYTES = 5 * 1024 * 1024;
+  const RULES = {{ ref_rules|tojson }};
+  const radios = document.querySelectorAll('input[name="payment_method"]');
+  const panels = document.querySelectorAll('.qr-panel');
+  const reference = document.getElementById('reference_no');
+  const refLabel = document.getElementById('refLabel');
+  const refHint = document.getElementById('refHint');
+  const refError = document.getElementById('refError');
+  const receipt = document.getElementById('receipt');
+  const preview = document.getElementById('receiptPreview');
+  const confirmBtn = document.getElementById('confirmBtn');
+
+  function chosenRule() {
+    const chosen = document.querySelector('input[name="payment_method"]:checked');
+    return chosen ? RULES[chosen.value] : null;
+  }
+
+  // GCash: numbers only. Maya: letters and numbers. Both 13 to 16 characters.
+  function cleanReference(rule) {
+    let v = reference.value.replace(/\s/g, '');
+    if (rule) v = v.replace(rule.numeric ? /[^0-9]/g : /[^A-Za-z0-9]/g, '');
+    reference.value = v.slice(0, 20);
+  }
+
+  function applyMethod() {
+    const rule = chosenRule();
+    if (rule) {
+      refLabel.textContent = rule.label;
+      refHint.textContent = rule.hint;
+      reference.placeholder = rule.hint;
+      reference.inputMode = rule.numeric ? 'numeric' : 'text';
+    }
+    cleanReference(rule);
+  }
+
+  function refresh() {
+    const chosen = document.querySelector('input[name="payment_method"]:checked');
+    const rule = chosenRule();
+
+    panels.forEach(function (p) {
+      p.classList.toggle('d-none', !chosen || p.dataset.method !== chosen.value);
+    });
+
+    const refOk = !!rule && new RegExp(rule.regex).test(reference.value);
+    const showError = !!rule && reference.value.length > 0 && !refOk;
+    refError.textContent = showError ? rule.error : '';
+    refError.classList.toggle('d-none', !showError);
+
+    confirmBtn.disabled = !(chosen && refOk && receipt.files.length > 0);
+  }
+
+  receipt.addEventListener('change', function () {
+    const file = receipt.files[0];
+    if (file && file.size > MAX_BYTES) {
+      alert('That file is too large. Please upload an image under 5 MB.');
+      receipt.value = '';
+    }
+    if (receipt.files.length) {
+      preview.src = URL.createObjectURL(receipt.files[0]);
+      preview.classList.remove('d-none');
+    } else {
+      preview.classList.add('d-none');
+    }
+    refresh();
+  });
+
+  radios.forEach(function (r) {
+    r.addEventListener('change', function () { applyMethod(); refresh(); });
+  });
+  reference.addEventListener('input', function () { cleanReference(chosenRule()); refresh(); });
+
+  applyMethod();
+  refresh();
+</script>
+{% endblock %}

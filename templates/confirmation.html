@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Booking {{ b.booking_status|capitalize }} - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="text-center mb-4">
+      {% if b.booking_status == 'confirmed' %}
+      <i class="fa-solid fa-circle-check text-success" style="font-size: 54px;"></i>
+      <h1 class="mt-3">Booking Confirmed!</h1>
+      <p class="text-secondary">Thank you, {{ b.given_name }}. Your payment was verified and your tickets are ready.</p>
+      {% elif b.booking_status == 'rejected' %}
+      <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 54px;"></i>
+      <h1 class="mt-3">Booking Rejected</h1>
+      <p class="text-secondary mb-1">Sorry, {{ b.given_name }}. We could not verify your payment.</p>
+      {% if b.admin_remarks %}<p class="mb-1"><strong>Reason:</strong> {{ b.admin_remarks }}</p>{% endif %}
+      <p class="text-secondary">Your seats were released. You may book again with a valid receipt.</p>
+      {% elif b.booking_status == 'cancelled' %}
+      <i class="fa-solid fa-ban text-secondary" style="font-size: 54px;"></i>
+      <h1 class="mt-3">Booking Cancelled</h1>
+      <p class="text-secondary mb-1">Sorry, {{ b.given_name }}. This booking was cancelled by the cinema.</p>
+      {% if b.admin_remarks %}<p class="mb-1"><strong>Reason:</strong> {{ b.admin_remarks }}</p>{% endif %}
+      {% if b.payment_status == 'refunded' %}<p class="mb-1"><strong>Your payment was marked as refunded.</strong></p>{% endif %}
+      <p class="text-secondary">Your seats were released. If you have questions, please contact the cinema.</p>
+      {% else %}
+      <i class="fa-solid fa-hourglass-half text-warning" style="font-size: 54px;"></i>
+      <h1 class="mt-3">Booking Submitted</h1>
+      <p class="text-secondary mb-1">Thank you, {{ b.given_name }}. Your booking is <strong>pending</strong>.</p>
+      <p class="text-secondary">Our admin is checking your receipt screenshot and reference number. Your seats are reserved in the meantime, and you will receive an email once it is confirmed.</p>
+      {% endif %}
+    </div>
+
+    <div class="ticket">
+      <div class="ticket-head">
+        <small>BOOKING ID</small>
+        <h3>#{{ '%06d'|format(b.booking_id) }}</h3>
+      </div>
+
+      <div class="ticket-body">
+        <h4>{{ b.title }}</h4>
+        <p class="text-secondary mb-0">{{ b.genre }} &bull; {{ b.duration }} minutes</p>
+
+        <div class="ticket-grid">
+          <div><small>Cinema</small><strong>{{ b.cinema }}</strong></div>
+          <div><small>Cinema Type</small><strong>{{ 'VIP Cinema Room' if b.cinema_type == 'VIP' else 'Regular Cinema' }}</strong></div>
+          <div><small>Date</small><strong>{{ b.booking_date.strftime('%B %d, %Y') }}</strong></div>
+          <div><small>Showtime</small><strong>{{ b.showtime }}</strong></div>
+          <div><small>Seats</small><strong>{{ seats|join(', ') }}</strong></div>
+          <div><small>Tickets</small><strong>{{ b.tickets }}</strong></div>
+          <div><small>Name</small><strong>{{ b.given_name }} {{ b.surname }}</strong></div>
+          {% if b.payment_method %}
+          <div><small>Payment</small><strong>{{ b.payment_method }} &bull; {{ b.reference_no }}</strong></div>
+          {% endif %}
+        </div>
+
+        {% if b.free_perks and b.booking_status not in ('rejected', 'cancelled') %}
+        <div class="perk-banner mt-3"><i class="fa-solid fa-gift me-2"></i>{{ b.free_perks }} included</div>
+        {% endif %}
+
+        <div class="ticket-foot">
+          <div>
+            <small class="text-secondary d-block">Total</small>
+            <strong>₱{{ "%.2f"|format(b.total_amount) }}</strong>
+          </div>
+          <span class="status-pill {{ b.booking_status }}">{{ b.booking_status }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      {% if b.booking_status == 'confirmed' %}
+      <a href="{{ url_for('download_receipt', booking_id=b.booking_id) }}" class="btn btn-brand">
+        <i class="fa-solid fa-file-arrow-down me-1"></i>Download PDF Receipt
+      </a>
+      {% elif b.booking_status in ('rejected', 'cancelled') %}
+      <a href="{{ url_for('movies') }}" class="btn btn-brand">Book Again</a>
+      {% endif %}
+      <a href="{{ url_for('my_bookings') }}" class="btn btn-ghost ms-2">My Bookings</a>
+      <a href="{{ url_for('home') }}" class="btn btn-ghost ms-2">Back to Home</a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

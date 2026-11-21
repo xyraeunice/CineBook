@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}My Bookings - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">YOUR TICKETS</p>
+        <h2>My Bookings</h2>
+      </div>
+    </div>
+
+    {% for b in bookings %}
+    <div class="booking-item">
+      <img src="{{ url_for('static', filename='posters/' ~ b.poster) }}" alt="{{ b.title }}">
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <h4>{{ b.title }}</h4>
+          <span class="text-secondary small">#{{ '%06d'|format(b.id) }}</span>
+        </div>
+        <p class="text-secondary mb-1">
+          {{ b.cinema }} ({{ 'VIP' if b.cinema_type == 'VIP' else 'Regular' }}) &bull; {{ b.booking_date.strftime('%B %d, %Y') }} &bull; {{ b.showtime }}
+        </p>
+        <p class="mb-2">
+          Seats: <strong>{{ b.seats }}</strong>
+          ({{ b.tickets }} ticket{{ 's' if b.tickets > 1 else '' }})
+        </p>
+        {% if b.free_perks and b.booking_status not in ('rejected', 'cancelled') %}
+        <p class="mb-2 text-warning small"><i class="fa-solid fa-gift me-1"></i>{{ b.free_perks }} included</p>
+        {% endif %}
+        {% if b.booking_status in ('rejected', 'cancelled') and b.admin_remarks %}
+        <p class="mb-2 text-danger small">Reason: {{ b.admin_remarks }}</p>
+        {% endif %}
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <strong class="fs-5">₱{{ "%.2f"|format(b.total_amount) }}</strong>
+          <span class="status-pill {{ b.booking_status }}">{{ b.booking_status }}</span>
+          <a href="{{ url_for('confirmation', booking_id=b.id) }}" class="btn btn-brand btn-sm">View Ticket</a>
+          {% if b.booking_status == 'confirmed' %}
+          <a href="{{ url_for('download_receipt', booking_id=b.id) }}" class="btn btn-ghost btn-sm">
+            <i class="fa-solid fa-file-arrow-down me-1"></i>PDF
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-box">
+      <i class="fa-solid fa-ticket fa-2x mb-3"></i>
+      <p>You have no bookings yet.</p>
+      <a href="{{ url_for('movies') }}" class="btn btn-brand">Browse Movies</a>
+    </div>
+    {% endfor %}
+
+  </div>
+</section>
+{% endblock %}

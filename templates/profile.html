@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <h2>My Profile</h2>
+        <p class="text-secondary mb-0">Update your information and password.</p>
+      </div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ===== PERSONAL INFORMATION ===== -->
+      <div class="col-lg-7">
+        <div class="auth-card dark-form">
+          <h4 class="mb-3">Personal information</h4>
+
+          {% if success %}
+          <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i>{{ success }}</div>
+          {% endif %}
+          {% if error %}
+          <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ error }}</div>
+          {% endif %}
+
+          <form method="POST" novalidate autocomplete="off">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="profile">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="given_name">Given Name</label>
+                <div class="input-group {{ 'has-error' if errors.get('given_name') }}">
+                  <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                  <input type="text" class="form-control" name="given_name" id="given_name"
+                         maxlength="30" value="{{ form.given_name }}">
+                </div>
+                <div class="field-error">{{ errors.get('given_name', '') }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="surname">Surname</label>
+                <div class="input-group {{ 'has-error' if errors.get('surname') }}">
+                  <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                  <input type="text" class="form-control" name="surname" id="surname"
+                         maxlength="30" value="{{ form.surname }}">
+                </div>
+                <div class="field-error">{{ errors.get('surname', '') }}</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="email">Email Address</label>
+              <div class="input-group {{ 'has-error' if errors.get('email') }}">
+                <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+                <input type="email" class="form-control" name="email" id="email"
+                       maxlength="30" value="{{ form.email }}">
+              </div>
+              <div class="field-error">{{ errors.get('email', '') }}</div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="phone_number">Contact Number</label>
+                <div class="input-group {{ 'has-error' if errors.get('phone_number') }}">
+                  <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
+                  <input type="tel" class="form-control" name="phone_number" id="phone_number"
+                         maxlength="11" inputmode="numeric" placeholder="09XXXXXXXXX"
+                         oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                         value="{{ form.phone_number }}">
+                </div>
+                <div class="field-error">{{ errors.get('phone_number', '') }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="date_of_birth">Date of Birth</label>
+                <div class="input-group {{ 'has-error' if errors.get('date_of_birth') }}">
+                  <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                  <input type="date" class="form-control" name="date_of_birth" id="date_of_birth"
+                         max="{{ (today[:4]|int - min_age) ~ today[4:] }}"
+                         value="{{ form.date_of_birth }}">
+                </div>
+                <div class="form-text">You must be at least {{ min_age }} years old.</div>
+                <div class="field-error" id="err-dob">{{ errors.get('date_of_birth', '') }}</div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-brand px-4">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===== CHANGE PASSWORD ===== -->
+      <div class="col-lg-5">
+        <div class="auth-card dark-form">
+          <h4 class="mb-3">Change password</h4>
+
+          {% if pw_success %}
+          <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i>{{ pw_success }}</div>
+          {% endif %}
+
+          <form method="POST" novalidate autocomplete="off">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="password">
+
+            <div class="mb-3">
+              <label class="form-label" for="current_password">Current Password</label>
+              <div class="input-group {{ 'has-error' if pw_errors.get('current_password') }}">
+                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                <input type="password" class="form-control" name="current_password" id="current_password"
+                       maxlength="30" autocomplete="current-password">
+                <button type="button" class="btn toggle-pass" data-target="current_password"><i class="fa-solid fa-eye"></i></button>
+              </div>
+              <div class="field-error">{{ pw_errors.get('current_password', '') }}</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="new_password">New Password</label>
+              <div class="input-group {{ 'has-error' if pw_errors.get('new_password') }}">
+                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                <input type="password" class="form-control" name="new_password" id="new_password"
+                       maxlength="30" autocomplete="new-password">
+                <button type="button" class="btn toggle-pass" data-target="new_password"><i class="fa-solid fa-eye"></i></button>
+              </div>
+              <div class="field-error">{{ pw_errors.get('new_password', '') }}</div>
+              <ul class="rules">
+                <li id="r-len"><i class="fa-regular fa-circle"></i>8 to 30 characters</li>
+                <li id="r-up"><i class="fa-regular fa-circle"></i>One uppercase letter</li>
+                <li id="r-low"><i class="fa-regular fa-circle"></i>One lowercase letter</li>
+                <li id="r-num"><i class="fa-regular fa-circle"></i>One number</li>
+                <li id="r-space"><i class="fa-regular fa-circle"></i>No spaces</li>
+              </ul>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label" for="confirm_password">Confirm New Password</label>
+              <div class="input-group {{ 'has-error' if pw_errors.get('confirm_password') }}">
+                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                <input type="password" class="form-control" name="confirm_password" id="confirm_password"
+                       maxlength="30" autocomplete="new-password">
+                <button type="button" class="btn toggle-pass" data-target="confirm_password"><i class="fa-solid fa-eye"></i></button>
+              </div>
+              <div class="field-error">{{ pw_errors.get('confirm_password', '') }}</div>
+              <ul class="rules">
+                <li id="r-match"><i class="fa-regular fa-circle"></i>Passwords match</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn btn-brand px-4">
+              <i class="fa-solid fa-key me-1"></i>Change Password
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  // Show / hide password
+  document.querySelectorAll('.toggle-pass').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(btn.dataset.target);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.querySelector('i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  });
+
+  // Live checklist for the new password
+  const pw = document.getElementById('new_password');
+  const cf = document.getElementById('confirm_password');
+
+  function mark(id, ok) {
+    const li = document.getElementById(id);
+    li.classList.toggle('ok', ok);
+    li.querySelector('i').className = ok ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle';
+  }
+
+  function checklist() {
+    const v = pw.value;
+    mark('r-len', v.length >= 8 && v.length <= 30);
+    mark('r-up', /[A-Z]/.test(v));
+    mark('r-low', /[a-z]/.test(v));
+    mark('r-num', /[0-9]/.test(v));
+    mark('r-space', v.length > 0 && !/\s/.test(v));
+    mark('r-match', v.length > 0 && v === cf.value);
+  }
+
+  pw.addEventListener('input', checklist);
+  cf.addEventListener('input', checklist);
+  checklist();
+
+  // Date of birth: later than the latest allowed date can't be kept.
+  const dob = document.getElementById('date_of_birth');
+  const dobError = document.getElementById('err-dob');
+  dob.addEventListener('change', function () {
+    if (dob.value && dob.max && dob.value > dob.max) {
+      dob.value = '';
+      dobError.textContent = 'You must be at least {{ min_age }} years old.';
+      dob.closest('.input-group').classList.add('has-error');
+    }
+  });
+</script>
+{% endblock %}

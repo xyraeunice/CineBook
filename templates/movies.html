@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Movies - CineBook{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <div class="container">
+    <p class="section-label">ALL MOVIES</p>
+    <h1>Browse Movies</h1>
+    <p class="text-secondary mb-0">Find your next movie night.</p>
+  </div>
+</section>
+
+<section class="pb-4">
+  <div class="container">
+
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <button type="button" class="active" data-filter="all">All</button>
+        <button type="button" data-filter="now_showing">Now Showing</button>
+        <button type="button" data-filter="coming_soon">Coming Soon</button>
+      </div>
+
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="movieSearch" placeholder="Search title or genre" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="row g-4" id="movieGrid">
+      {% for movie in movies %}
+      <div class="col-lg-3 col-md-6 movie-item"
+           data-status="{{ movie.status }}"
+           data-title="{{ (movie.title ~ ' ' ~ movie.genre)|lower }}">
+        <div class="movie-card">
+          <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="poster-wrap d-block">
+            <img src="{{ url_for('static', filename='posters/' ~ movie.poster) }}" alt="{{ movie.title }}">
+            {% if movie.status == 'now_showing' %}
+              <span class="badge-rating"><i class="fa-solid fa-star"></i> {{ movie.rating }}</span>
+              <span class="poster-overlay"><span class="btn btn-brand btn-sm px-4">Book Now</span></span>
+            {% else %}
+              <span class="badge-soon">Coming Soon</span>
+              <span class="poster-overlay"><span class="btn btn-ghost btn-sm px-4">View Details</span></span>
+            {% endif %}
+          </a>
+          <div class="movie-body">
+            <h3>{{ movie.title }}</h3>
+            <div class="mb-2"><span class="genre-chip">{{ movie.genre }}</span></div>
+
+            {% if movie.status == 'now_showing' %}
+            <div class="movie-meta">
+              <span><i class="fa-regular fa-clock me-1"></i>{{ movie.duration }} min</span>
+              <span class="movie-price">₱{{ "%.0f"|format(movie.price) }}</span>
+            </div>
+            <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="btn btn-brand w-100">Book Now</a>
+            {% else %}
+            <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="btn btn-ghost w-100">Details</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12">
+        <div class="empty-box"><p class="mb-0">No movies available.</p></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="empty-box d-none mt-3" id="noResults">
+      <i class="fa-solid fa-magnifying-glass fa-2x mb-3"></i>
+      <p class="mb-0">No movies match your search.</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const tabs = document.querySelectorAll('.filter-tabs button');
+  const items = document.querySelectorAll('.movie-item');
+  const search = document.getElementById('movieSearch');
+  const noResults = document.getElementById('noResults');
+  let currentFilter = 'all';
+
+  function applyFilters() {
+    const q = search.value.toLowerCase().trim();
+    let shown = 0;
+
+    items.forEach(function (item) {
+      const okStatus = currentFilter === 'all' || item.dataset.status === currentFilter;
+      const okText = item.dataset.title.indexOf(q) !== -1;
+      const visible = okStatus && okText;
+      item.classList.toggle('d-none', !visible);
+      if (visible) shown++;
+    });
+
+    noResults.classList.toggle('d-none', shown > 0 || items.length === 0);
+  }
+
+  tabs.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabs.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      applyFilters();
+    });
+  });
+
+  search.addEventListener('input', applyFilters);
+</script>
+
+{% endblock %}

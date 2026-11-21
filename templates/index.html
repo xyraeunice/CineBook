@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}CineBook - Book Your Movie Tickets Online{% endblock %}
+
+{% block content %}
+
+<!-- ================= HERO ================= -->
+{% if now_showing %}
+<section class="h-hero" aria-label="Featured movies">
+  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="7000">
+
+    <div class="carousel-inner">
+      {% for m in now_showing %}
+      <div class="carousel-item {{ 'active' if loop.first }}">
+        <div class="h-slide" style="--poster: url('{{ url_for('static', filename='posters/' ~ m.poster) }}');">
+          <div class="container h-slide-inner">
+
+            <div class="h-copy">
+              <span class="h-status"><i class="fa-solid fa-circle"></i>Now showing</span>
+              <h1 class="h-title">{{ m.title }}</h1>
+
+              <div class="h-meta">
+                <span class="h-score"><i class="fa-solid fa-star"></i>{{ m.rating }}</span>
+                <span>{{ m.genre }}</span>
+                <span>{{ m.duration }} min</span>
+                <span>From ₱{{ "%.0f"|format(m.price) }}</span>
+              </div>
+
+              <p class="h-desc">{{ m.description }}</p>
+
+              <div class="h-actions">
+                <a href="{{ url_for('booking', movie_id=m.id) }}" class="btn btn-brand btn-lg px-4">
+                  <i class="fa-solid fa-ticket me-2"></i>Book tickets
+                </a>
+                <a href="{{ url_for('movie_details', movie_id=m.id) }}" class="btn btn-ghost btn-lg">Movie details</a>
+              </div>
+            </div>
+
+            <a href="{{ url_for('movie_details', movie_id=m.id) }}" class="h-poster d-none d-md-block"
+               aria-label="{{ m.title }} details">
+              <img src="{{ url_for('static', filename='posters/' ~ m.poster) }}" alt="{{ m.title }} poster">
+            </a>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if now_showing|length > 1 %}
+    <div class="container h-rail-wrap">
+      <div class="h-rail carousel-indicators">
+        {% for m in now_showing %}
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                class="{{ 'active' if loop.first }}" aria-label="Show {{ m.title }}"
+                {% if loop.first %}aria-current="true"{% endif %}>
+          <img src="{{ url_for('static', filename='posters/' ~ m.poster) }}" alt="">
+          <span>{{ m.title }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% else %}
+<section class="h-hero h-hero-empty">
+  <div class="container">
+    <h1 class="h-title">Your movie, your seat</h1>
+    <p class="h-desc">Reserve your tickets and pick your own seat, anytime, anywhere.</p>
+    <a href="{{ url_for('movies') }}" class="btn btn-brand btn-lg px-4">Browse movies</a>
+  </div>
+</section>
+{% endif %}
+
+<!-- ================= QUICK BOOK ================= -->
+{% if now_showing %}
+<div class="container h-book-wrap">
+  <div class="h-book">
+    <div class="h-book-title">
+      <i class="fa-solid fa-ticket"></i>
+      <div>
+        <strong>Book tickets</strong>
+        <small>Choose a movie, then pick your room, cinema and showtime.</small>
+      </div>
+    </div>
+    <label class="visually-hidden" for="qbMovie">Movie</label>
+    <select id="qbMovie">
+      <option value="">Select a movie now showing</option>
+      {% for m in now_showing %}
+      <option value="{{ m.id }}">{{ m.title }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-brand px-4" id="qbGo" data-base="{{ url_for('booking', movie_id=0) }}">
+      Continue
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<!-- ================= WHY BOOK HERE ================= -->
+<div class="container">
+  <div class="h-perks">
+    <div><i class="fa-solid fa-crown"></i><strong>Regular or VIP room</strong><small>VIP has a big screen and leather chairs</small></div>
+    <div><i class="fa-solid fa-couch"></i><strong>Pick your exact seat</strong><small>See the seat map before you pay</small></div>
+    <div><i class="fa-solid fa-qrcode"></i><strong>Pay with GCash or Maya</strong><small>Scan the QR and upload your receipt</small></div>
+    <div><i class="fa-solid fa-envelope-circle-check"></i><strong>Receipt by email</strong><small>Sent once your payment is verified</small></div>
+  </div>
+</div>
+
+<!-- ================= NOW SHOWING ================= -->
+<section class="h-section">
+  <div class="container">
+    <div class="h-head">
+      <h2 class="h-heading">Now showing</h2>
+      <a href="{{ url_for('movies') }}" class="h-link">See all movies</a>
+    </div>
+
+    <div class="h-grid">
+      {% for movie in now_showing %}
+      <article class="h-card">
+        <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="h-card-img">
+          <img src="{{ url_for('static', filename='posters/' ~ movie.poster) }}" alt="{{ movie.title }} poster" loading="lazy">
+          <span class="h-rating"><i class="fa-solid fa-star"></i>{{ movie.rating }}</span>
+          <span class="h-hover"><span class="btn btn-brand btn-sm px-4">View details</span></span>
+        </a>
+        <h3 class="h-card-title"><a href="{{ url_for('movie_details', movie_id=movie.id) }}">{{ movie.title }}</a></h3>
+        <div class="h-card-sub"><span>{{ movie.genre }}</span><span>{{ movie.duration }} min</span></div>
+        <div class="h-card-foot">
+          <span class="h-price">From ₱{{ "%.0f"|format(movie.price) }}</span>
+          <a href="{{ url_for('booking', movie_id=movie.id) }}" class="btn btn-brand btn-sm px-3">Book</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="h-empty">
+        <i class="fa-solid fa-film"></i>
+        <p>No movies are showing right now. Check back soon for new releases.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= VIP ROOM ================= -->
+<section class="h-vip">
+  <div class="container">
+    <div class="h-vip-grid">
+
+      <div class="h-vip-copy">
+        <h2 class="h-heading">Watch it in the VIP Cinema Room</h2>
+        <p>A smaller room built around comfort. Every VIP ticket includes a seat in a premium leather chair, a bigger screen, and free drinks and popcorn.</p>
+
+        <ul class="h-vip-list">
+          <li><i class="fa-solid fa-tv"></i>Big screen</li>
+          <li><i class="fa-solid fa-couch"></i>Premium leather chairs</li>
+          <li><i class="fa-solid fa-bowl-food"></i>Free drinks and popcorn</li>
+        </ul>
+
+        <a href="{{ url_for('movies') }}" class="btn btn-brand btn-lg px-4">Choose a movie</a>
+      </div>
+
+      <div class="h-vip-art" aria-hidden="true">
+        <div class="h-art-screen"></div>
+        {% for r in range(3) %}
+        <div class="h-art-row">
+          {% for c in range(6) %}<i></i>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMING SOON ================= -->
+<section class="h-section">
+  <div class="container">
+    <div class="h-head">
+      <h2 class="h-heading">Coming soon</h2>
+    </div>
+
+    {% if coming_soon %}
+    <div class="h-scroller">
+      {% for movie in coming_soon %}
+      <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="h-soon">
+        <span class="h-soon-img">
+          <img src="{{ url_for('static', filename='posters/' ~ movie.poster) }}" alt="{{ movie.title }} poster" loading="lazy">
+          <span class="h-soon-tag">Coming soon</span>
+        </span>
+        <strong>{{ movie.title }}</strong>
+        <small>{{ movie.genre }}</small>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="h-empty">
+      <i class="fa-regular fa-calendar"></i>
+      <p>No upcoming releases yet. New movies appear here as soon as they are announced.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ================= CINEMAS ================= -->
+<section class="h-section">
+  <div class="container">
+    <div class="h-head">
+      <h2 class="h-heading">Our cinemas</h2>
+    </div>
+
+    <div class="h-cinemas">
+      {% for name in ['SM Manila', 'Robinsons Manila', 'Ayala Malls Manila Bay'] %}
+      <div class="h-cinema">
+        <h3>{{ name }}</h3>
+        <p>Regular and VIP rooms. Showtimes depend on the movie, so open a movie to see its times.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="h-section h-section-last">
+  <div class="container">
+    <div class="h-head">
+      <h2 class="h-heading">How booking works</h2>
+    </div>
+
+    <ol class="h-steps">
+      <li><span>1</span><h3>Pick a movie</h3><p>Browse what is showing now.</p></li>
+      <li><span>2</span><h3>Choose your room</h3><p>Regular Cinema or VIP Cinema Room.</p></li>
+      <li><span>3</span><h3>Select seats</h3><p>Choose your seats from the seat map.</p></li>
+      <li><span>4</span><h3>Pay and upload proof</h3><p>Pay by GCash or Maya, then upload your receipt screenshot and reference number.</p></li>
+      <li><span>5</span><h3>Get your tickets</h3><p>We verify your payment. Once approved, your booking is confirmed and your receipt is emailed.</p></li>
+    </ol>
+  </div>
+</section>
+
+<script>
+  const qbGo = document.getElementById('qbGo');
+  if (qbGo) {
+    qbGo.addEventListener('click', function () {
+      const id = document.getElementById('qbMovie').value;
+      if (!id) {
+        document.getElementById('qbMovie').focus();
+        return;
+      }
+      window.location.href = qbGo.dataset.base.replace(/0$/, id);
+    });
+  }
+</script>
+
+{% endblock %}

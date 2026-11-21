@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>Dashboard</h2>
+      </div>
+      <a href="{{ url_for('admin_bookings_export') }}" class="btn btn-ghost">
+        <i class="fa-solid fa-file-csv me-1"></i>Export all bookings (CSV)
+      </a>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-film"></i>
+          <small>Total Movies</small>
+          <h3>{{ movie_stats.total }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-play"></i>
+          <small>Now Showing</small>
+          <h3>{{ movie_stats.now_showing }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-regular fa-calendar"></i>
+          <small>Coming Soon</small>
+          <h3>{{ movie_stats.coming_soon }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-ticket"></i>
+          <small>Total Bookings</small>
+          <h3>{{ booking_stats.total }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('admin_bookings', status='pending') }}" class="text-decoration-none text-white">
+          <div class="stat-card">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <small>Pending Verification</small>
+            <h3>{{ booking_stats.pending }}</h3>
+          </div>
+        </a>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-peso-sign"></i>
+          <small>Revenue</small>
+          <h3>₱{{ "{:,.2f}".format(booking_stats.revenue) }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-users"></i>
+          <small>Users</small>
+          <h3>{{ user_stats.total }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <h4 class="mb-3">Revenue</h4>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-calendar-day"></i>
+          <small>Today</small>
+          <h3>₱{{ "{:,.2f}".format(revenue.today) }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-solid fa-calendar-week"></i>
+          <small>This week (Mon&ndash;Sun)</small>
+          <h3>₱{{ "{:,.2f}".format(revenue.week) }}</h3>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <div class="stat-card">
+          <i class="fa-regular fa-calendar"></i>
+          <small>This month</small>
+          <h3>₱{{ "{:,.2f}".format(revenue.month) }}</h3>
+        </div>
+      </div>
+    </div>
+    <p class="text-secondary small mb-4">Counted on the day the payment was approved. Cancelled and rejected bookings are not included.</p>
+
+    <h4 class="mb-3">
+      Pending for more than 24 hours
+      {% if overdue_total %}<span class="pill pill-red">{{ overdue_total }}</span>{% endif %}
+    </h4>
+    {% if overdue_error %}
+    <div class="alert alert-warning">
+      <i class="fa-solid fa-circle-info me-1"></i>
+      This list needs a <strong>created_at</strong> column in the bookings table.
+      Run <strong>schema_updates_dashboard.sql</strong> in phpMyAdmin once.
+    </div>
+    {% else %}
+    <div class="admin-panel mb-4">
+      <table class="admin-table">
+        <thead>
+          <tr><th>ID</th><th>Customer</th><th>Movie</th><th>Total</th><th>Waiting</th><th class="text-end">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for b in overdue %}
+          <tr>
+            <td>#{{ '%06d'|format(b.id) }}</td>
+            <td>{{ b.given_name }} {{ b.surname }}</td>
+            <td>{{ b.title }}</td>
+            <td>₱{{ "%.2f"|format(b.total_amount) }}</td>
+            <td>{{ b.hours_waiting // 24 }}d {{ b.hours_waiting % 24 }}h</td>
+            <td class="text-end">
+              <a href="{{ url_for('admin_bookings', status='pending') }}" class="btn btn-ghost btn-sm">Review</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-secondary py-4">No pending booking is older than 24 hours.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <h4 class="mb-3">Recent Bookings</h4>
+    <div class="admin-panel">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Customer</th><th>Movie</th><th>Cinema</th>
+            <th>Date</th><th>Showtime</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in recent %}
+          <tr>
+            <td>#{{ '%06d'|format(b.id) }}</td>
+            <td>{{ b.given_name }} {{ b.surname }}</td>
+            <td>{{ b.title }}</td>
+            <td>{{ b.cinema }}</td>
+            <td>{{ b.booking_date.strftime('%b %d, %Y') }}</td>
+            <td>{{ b.showtime }}</td>
+            <td>₱{{ "%.2f"|format(b.total_amount) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="text-center text-secondary py-4">No bookings yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

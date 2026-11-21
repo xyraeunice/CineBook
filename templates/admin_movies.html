@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Movies - CineBook Admin{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>Manage Movies</h2>
+      </div>
+      <a href="{{ url_for('admin_movie_add') }}" class="btn btn-brand">
+        <i class="fa-solid fa-plus me-1"></i>Add Movie
+      </a>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_movies') }}" class="{{ 'active' if view == 'active' }}">Active ({{ counts.active }})</a>
+      <a href="{{ url_for('admin_movies', view='archived') }}" class="{{ 'active' if view == 'archived' }}">Archived ({{ counts.archived }})</a>
+    </div>
+
+    <div class="admin-panel">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Poster</th><th>Title</th><th>Genre</th><th>Showtimes</th><th>Status</th>
+            <th>Price</th><th>Bookings</th><th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in movies %}
+          <tr>
+            <td><img class="thumb" src="{{ url_for('static', filename='posters/' ~ m.poster) }}" alt=""></td>
+            <td>
+              <strong>{{ m.title }}</strong><br>
+              <small class="text-secondary">{{ m.duration }} min &bull; ⭐ {{ m.rating }}</small>
+            </td>
+            <td>{{ m.genre }}</td>
+            <td>{% for t in get_showtimes(m) %}<span class="h-time">{{ t }}</span>{% endfor %}</td>
+            <td>
+              {% if m.is_archived %}
+                <span class="pill pill-gray">Archived</span>
+              {% elif m.status == 'now_showing' %}
+                <span class="pill pill-green">Now Showing</span>
+              {% else %}
+                <span class="pill pill-yellow">Coming Soon</span>
+              {% endif %}
+            </td>
+            <td>₱{{ "%.0f"|format(m.price) }}</td>
+            <td>{{ m.booking_count }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('admin_movie_edit', movie_id=m.id) }}" class="btn btn-ghost btn-sm">
+                <i class="fa-solid fa-pen me-1"></i>Edit
+              </a>
+              {% if m.is_archived %}
+              <form method="POST" action="{{ url_for('admin_movie_restore', movie_id=m.id) }}" class="d-inline"
+                    onsubmit="return confirm('Restore this movie? Customers will see it again.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-brand btn-sm">
+                  <i class="fa-solid fa-rotate-left me-1"></i>Restore
+                </button>
+              </form>
+              {% else %}
+              <form method="POST" action="{{ url_for('admin_movie_archive', movie_id=m.id) }}" class="d-inline"
+                    onsubmit="return confirm('Archive this movie? Customers will no longer see or book it. Existing bookings are kept.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-ghost btn-sm">
+                  <i class="fa-solid fa-box-archive me-1"></i>Archive
+                </button>
+              </form>
+              {% endif %}
+              <form method="POST" action="{{ url_for('admin_movie_delete', movie_id=m.id) }}"
+                    class="d-inline"
+                    onsubmit="return confirm('Delete this movie? This cannot be undone.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="fa-solid fa-trash me-1"></i>Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-secondary py-4">{{ 'No archived movies.' if view == 'archived' else 'No movies yet.' }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

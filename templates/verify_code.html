@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Code - CineBook{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="container">
+
+    <div class="auth-split dark-form">
+
+      <div class="auth-side">
+        <span class="side-tag"><i class="fa-solid fa-shield-halved me-1"></i>SECURITY CHECK</span>
+        <h3>Check your inbox.</h3>
+        <p>We sent a 6-digit code to your email. Enter it to confirm that this is really you.</p>
+
+        <ul class="auth-points">
+          <li><i class="fa-regular fa-clock"></i>The code expires in 5 minutes</li>
+          <li><i class="fa-solid fa-triangle-exclamation"></i>You have 5 attempts</li>
+          <li><i class="fa-solid fa-inbox"></i>Check your spam folder too</li>
+        </ul>
+      </div>
+
+      <div class="auth-main">
+        <h2>Verify Your Email</h2>
+        <p class="text-secondary mb-1">We sent a 6-digit verification code to</p>
+        <p class="fw-bold mb-3">{{ email }}</p>
+
+        <!-- COUNTDOWN -->
+        <div class="d-flex align-items-center justify-content-between mb-4 p-3 rounded"
+             id="timerBox" style="background:#101010; border:1px solid #333;">
+          <span class="text-secondary">
+            <i class="fa-regular fa-clock me-1"></i>Code expires in
+          </span>
+          <strong id="timer" style="font-size: 24px; letter-spacing: 1px;">05:00</strong>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger">
+          <i class="fa-solid fa-circle-exclamation me-1"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <div class="alert alert-warning d-none" id="expiredMsg">
+          <i class="fa-solid fa-hourglass-end me-1"></i>
+          Your code has expired. Please request a new one.
+        </div>
+
+        <form method="POST" id="verifyForm" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" class="form-control form-control-lg text-center fw-bold mb-4"
+                 name="code" id="code" placeholder="000000" maxlength="6"
+                 inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code"
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                 style="letter-spacing: 12px; font-size: 28px; min-height: 64px;" required>
+          <button type="submit" class="btn btn-brand w-100 py-2" id="verifyBtn">
+            <i class="fa-solid fa-circle-check me-1"></i>Verify Code
+          </button>
+        </form>
+
+        <a href="{{ url_for('forgot_password') }}" class="btn btn-brand w-100 py-2 d-none" id="newCodeBtn">
+          <i class="fa-solid fa-rotate-right me-1"></i>Request a New Code
+        </a>
+
+        <div class="auth-divider">or</div>
+
+        <p class="text-center mb-0">
+          <a href="{{ url_for('forgot_password') }}" class="text-brand">
+            <i class="fa-solid fa-rotate-right me-1"></i>Request a New Code
+          </a>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<script>
+  let secondsLeft = {{ seconds_left }};
+
+  const timer = document.getElementById('timer');
+  const timerBox = document.getElementById('timerBox');
+  const codeInput = document.getElementById('code');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const verifyForm = document.getElementById('verifyForm');
+  const expiredMsg = document.getElementById('expiredMsg');
+  const newCodeBtn = document.getElementById('newCodeBtn');
+
+  function render() {
+    const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+    const s = String(secondsLeft % 60).padStart(2, '0');
+    timer.textContent = m + ':' + s;
+
+    // Pula kapag wala nang isang minuto
+    if (secondsLeft <= 60) {
+      timer.style.color = '#ff6b7a';
+      timerBox.style.borderColor = '#dc3545';
+    }
+  }
+
+  function expire() {
+    timer.textContent = '00:00';
+    codeInput.disabled = true;
+    verifyBtn.disabled = true;
+    verifyForm.classList.add('d-none');
+    expiredMsg.classList.remove('d-none');
+    newCodeBtn.classList.remove('d-none');
+  }
+
+  if (secondsLeft <= 0) {
+    expire();
+  } else {
+    render();
+    const tick = setInterval(function () {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(tick);
+        expire();
+      } else {
+        render();
+      }
+    }, 1000);
+  }
+</script>
+{% endblock %}

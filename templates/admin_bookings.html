@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}All Bookings - CineBook Admin{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>Bookings &amp; Payment Verification</h2>
+      </div>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_bookings', q=q or None) }}" class="{{ 'active' if not status }}">All</a>
+      <a href="{{ url_for('admin_bookings', status='pending', q=q or None) }}" class="{{ 'active' if status == 'pending' }}">
+        Pending ({{ counts.get('pending', 0) }})
+      </a>
+      <a href="{{ url_for('admin_bookings', status='confirmed', q=q or None) }}" class="{{ 'active' if status == 'confirmed' }}">
+        Confirmed ({{ counts.get('confirmed', 0) }})
+      </a>
+      <a href="{{ url_for('admin_bookings', status='rejected', q=q or None) }}" class="{{ 'active' if status == 'rejected' }}">
+        Rejected ({{ counts.get('rejected', 0) }})
+      </a>
+      <a href="{{ url_for('admin_bookings', status='cancelled', q=q or None) }}" class="{{ 'active' if status == 'cancelled' }}">
+        Cancelled ({{ counts.get('cancelled', 0) }})
+      </a>
+    </div>
+
+    <form method="GET" class="dark-form mb-3">
+      <input type="hidden" name="status" value="{{ status }}">
+      <div class="input-group" style="max-width: 520px;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" class="form-control" name="q" value="{{ q }}"
+               placeholder="Search movie, customer, email or reference no.">
+        <button type="submit" class="btn btn-brand">Search</button>
+        <a href="{{ url_for('admin_bookings_export', q=q or None, status=status or None) }}"
+           class="btn btn-ghost" title="Download the current list as CSV">
+          <i class="fa-solid fa-file-csv me-1"></i>Export CSV
+        </a>
+      </div>
+    </form>
+
+    <div class="admin-panel" style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Customer</th><th>Movie</th><th>Cinema</th><th>Schedule</th>
+            <th>Seats</th><th>Total</th><th>Payment</th><th>Receipt</th><th>Status</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr>
+            <td>#{{ '%06d'|format(b.id) }}</td>
+            <td>{{ b.given_name }} {{ b.surname }}<br><small class="text-secondary">{{ b.email }}</small></td>
+            <td>{{ b.title }}</td>
+            <td>
+              {{ b.cinema }}<br>
+              {% if b.cinema_type == 'VIP' %}
+              <span class="pill pill-yellow">VIP</span>
+              <small class="text-secondary d-block">{{ b.free_perks }}</small>
+              {% else %}
+              <small class="text-secondary">Regular</small>
+              {% endif %}
+            </td>
+            <td>{{ b.booking_date.strftime('%b %d, %Y') }}<br><small class="text-secondary">{{ b.showtime }}</small></td>
+            <td>{{ b.seats }}</td>
+            <td>₱{{ "%.2f"|format(b.total_amount) }}</td>
+            <td>
+              {% if b.payment_method %}
+              {{ b.payment_method }}<br><small class="text-secondary">Ref: <strong>{{ b.reference_no }}</strong></small>
+              {% else %}
+              <small class="text-secondary">&mdash;</small>
+              {% endif %}
+            </td>
+            <td>
+              {% if b.receipt_path %}
+              <a href="{{ url_for('admin_receipt', booking_id=b.id) }}" target="_blank" rel="noopener">
+                <img class="thumb" src="{{ url_for('admin_receipt', booking_id=b.id) }}" alt="Receipt">
+              </a>
+              {% else %}
+              <small class="text-secondary">&mdash;</small>
+              {% endif %}
+            </td>
+            <td>
+              <span class="pill {{ 'pill-green' if b.booking_status == 'confirmed' else ('pill-yellow' if b.booking_status == 'pending' else 'pill-red') }}">{{ b.booking_status }}</span>
+            </td>
+            <td style="min-width: 190px;">
+              {% if b.booking_status == 'pending' %}
+              <form method="POST" action="{{ url_for('admin_booking_approve', booking_id=b.id) }}" class="mb-2"
+                    onsubmit="return confirm('Approve booking #{{ b.id }}? Make sure the receipt and reference number are correct.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <button type="submit" class="btn btn-brand btn-sm w-100"><i class="fa-solid fa-check me-1"></i>Approve</button>
+              </form>
+              <form method="POST" action="{{ url_for('admin_booking_reject', booking_id=b.id) }}"
+                    onsubmit="return confirm('Reject booking #{{ b.id }}? Its seats will be released.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <input type="text" name="remarks" class="form-control form-control-sm mb-1"
+                       maxlength="255" placeholder="Reason (optional)">
+                <button type="submit" class="btn btn-ghost btn-sm w-100"><i class="fa-solid fa-xmark me-1"></i>Reject</button>
+              </form>
+              {% elif b.booking_status == 'rejected' %}
+              <small class="text-secondary d-block mb-2">{{ b.admin_remarks }}</small>
+              <form method="POST" action="{{ url_for('admin_booking_reopen', booking_id=b.id) }}"
+                    onsubmit="return confirm('Move booking #{{ b.id }} back to pending? Its seats will be reserved again.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <button type="submit" class="btn btn-ghost btn-sm w-100"><i class="fa-solid fa-rotate-left me-1"></i>Undo reject</button>
+              </form>
+              {% elif b.booking_status == 'cancelled' %}
+              <small class="text-secondary d-block mb-1">{{ b.admin_remarks }}</small>
+              {% if b.payment_status == 'refunded' %}<span class="pill pill-yellow">Refunded</span>{% endif %}
+              {% elif b.booking_status == 'confirmed' %}
+              {% if b.verified_at %}
+              <small class="text-secondary d-block mb-2">Verified {{ b.verified_at.strftime('%b %d, %Y %I:%M %p') }}</small>
+              {% endif %}
+              <form method="POST" action="{{ url_for('admin_booking_cancel', booking_id=b.id) }}"
+                    onsubmit="return confirm('Cancel booking #{{ b.id }}? Its seats will be released.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <input type="text" name="remarks" class="form-control form-control-sm mb-1"
+                       maxlength="255" placeholder="Reason (optional)">
+                <label class="small text-secondary d-block mb-1">
+                  <input type="checkbox" name="refund" value="1"> Mark as refunded
+                </label>
+                <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="fa-solid fa-ban me-1"></i>Cancel booking</button>
+              </form>
+              {% elif b.verified_at %}
+              <small class="text-secondary">Verified {{ b.verified_at.strftime('%b %d, %Y %I:%M %p') }}</small>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="text-center text-secondary py-4">No bookings found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% set page_endpoint = 'admin_bookings' %}
+    {% include '_pagination.html' %}
+
+  </div>
+</section>
+{% endblock %}

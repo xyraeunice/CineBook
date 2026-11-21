@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user.given_name }} {{ user.surname }} - CineBook Admin{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>{{ user.given_name }} {{ user.surname }}</h2>
+      </div>
+      <a href="{{ url_for('admin_users') }}" class="btn btn-ghost">
+        <i class="fa-solid fa-arrow-left me-1"></i>All Users
+      </a>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="row g-4">
+
+      <!-- LEFT: edit information + password -->
+      <div class="col-lg-7">
+        <div class="auth-card dark-form mb-4">
+          <h5 class="mb-3">Account Information</h5>
+
+          {% if error %}
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>{{ error }}
+          </div>
+          {% endif %}
+
+          <form method="POST" novalidate autocomplete="off">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="profile">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="given_name">Given Name</label>
+                <input type="text" class="form-control" name="given_name" id="given_name"
+                       maxlength="30" value="{{ form.given_name }}">
+                <div class="field-error">{{ errors.get('given_name', '') }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="surname">Surname</label>
+                <input type="text" class="form-control" name="surname" id="surname"
+                       maxlength="30" value="{{ form.surname }}">
+                <div class="field-error">{{ errors.get('surname', '') }}</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="email">Email Address</label>
+              <input type="email" class="form-control" name="email" id="email"
+                     maxlength="30" value="{{ form.email }}">
+              <div class="field-error">{{ errors.get('email', '') }}</div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="phone_number">Contact Number</label>
+                <input type="tel" class="form-control" name="phone_number" id="phone_number"
+                       maxlength="11" inputmode="numeric" placeholder="09XXXXXXXXX"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       value="{{ form.phone_number }}">
+                <div class="field-error">{{ errors.get('phone_number', '') }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="date_of_birth">Date of Birth</label>
+                <input type="date" class="form-control" name="date_of_birth" id="date_of_birth"
+                       max="{{ today }}" value="{{ form.date_of_birth }}">
+                <div class="field-error">{{ errors.get('date_of_birth', '') }}</div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-brand">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+            </button>
+          </form>
+        </div>
+
+        <div class="auth-card dark-form">
+          <h5 class="mb-1">Set a New Password</h5>
+          <p class="text-secondary small mb-3">
+            Use this only when the customer is locked out. They get an email saying their password was changed.
+          </p>
+
+          <form method="POST" novalidate autocomplete="off"
+                onsubmit="return confirm('Change this user\'s password?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="password">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="new_password">New Password</label>
+                <input type="password" class="form-control" name="new_password" id="new_password"
+                       maxlength="30" autocomplete="new-password">
+                <div class="field-error">{{ pw_errors.get('new_password', '') }}</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="confirm_password">Confirm Password</label>
+                <input type="password" class="form-control" name="confirm_password" id="confirm_password"
+                       maxlength="30" autocomplete="new-password">
+                <div class="field-error">{{ pw_errors.get('confirm_password', '') }}</div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-ghost">
+              <i class="fa-solid fa-key me-1"></i>Change Password
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- RIGHT: status + danger actions -->
+      <div class="col-lg-5">
+        <div class="auth-card dark-form mb-4">
+          <h5 class="mb-3">Account Status</h5>
+
+          <p class="mb-2">
+            Role:
+            {% if user.is_admin %}<span class="pill pill-yellow">Admin</span>{% else %}<span class="text-secondary">Customer</span>{% endif %}
+          </p>
+          <p class="mb-3">
+            Status:
+            {% if user.is_active %}<span class="pill pill-green">Active</span>{% else %}<span class="pill pill-red">Disabled</span>{% endif %}
+          </p>
+
+          {% if is_self %}
+          <p class="text-secondary small mb-0">
+            <i class="fa-solid fa-circle-info me-1"></i>This is your own account. You can't disable it,
+            change your admin access or delete it here.
+          </p>
+          {% else %}
+          <form method="POST" action="{{ url_for('admin_user_toggle_active', user_id=user.id) }}" class="mb-2"
+                onsubmit="return confirm('{{ 'Disable' if user.is_active else 'Enable' }} this account?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if user.is_active %}
+            <button type="submit" class="btn btn-ghost w-100">
+              <i class="fa-solid fa-user-slash me-1"></i>Disable Account
+            </button>
+            <small class="text-secondary d-block mt-1">The user can't log in. Their bookings are kept.</small>
+            {% else %}
+            <button type="submit" class="btn btn-brand w-100">
+              <i class="fa-solid fa-user-check me-1"></i>Enable Account
+            </button>
+            {% endif %}
+          </form>
+
+          <form method="POST" action="{{ url_for('admin_user_toggle_admin', user_id=user.id) }}" class="mb-2 mt-3"
+                onsubmit="return confirm('{{ 'Remove admin access from' if user.is_admin else 'Give admin access to' }} this user?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost w-100">
+              <i class="fa-solid fa-user-shield me-1"></i>{{ 'Remove Admin Access' if user.is_admin else 'Make Admin' }}
+            </button>
+          </form>
+
+          <form method="POST" action="{{ url_for('admin_user_delete', user_id=user.id) }}" class="mt-3"
+                onsubmit="return confirm('Delete this user permanently? This cannot be undone.');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger w-100">
+              <i class="fa-solid fa-trash me-1"></i>Delete User
+            </button>
+            <small class="text-secondary d-block mt-1">
+              Only possible when the user has no bookings and is not an admin. Otherwise, disable the account.
+            </small>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <h4 class="mt-4 mb-3">Bookings of this user</h4>
+    <div class="admin-panel" style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr><th>ID</th><th>Movie</th><th>Cinema</th><th>Schedule</th><th>Total</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr>
+            <td>#{{ '%06d'|format(b.id) }}</td>
+            <td>{{ b.title }}</td>
+            <td>{{ b.cinema }}</td>
+            <td>{{ b.booking_date.strftime('%b %d, %Y') }} <small class="text-secondary">{{ b.showtime }}</small></td>
+            <td>₱{{ "%.2f"|format(b.total_amount) }}</td>
+            <td>
+              <span class="pill {{ 'pill-green' if b.booking_status == 'confirmed' else ('pill-yellow' if b.booking_status == 'pending' else 'pill-red') }}">{{ b.booking_status }}</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-secondary py-4">This user has no bookings.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if bookings %}
+    <p class="mt-2">
+      <a href="{{ url_for('admin_bookings', q=user.email) }}" class="text-decoration-none">
+        Open in Bookings (approve / cancel) &raquo;
+      </a>
+    </p>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

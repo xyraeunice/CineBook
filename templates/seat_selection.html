@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Seats - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="mb-4">
+      <p class="section-label mb-1">SEAT SELECTION</p>
+      <h2>{{ movie.title }}</h2>
+      <p class="text-secondary mb-0">{{ cinema }} &bull; {{ cinema_label }} &bull; {{ formatted_date }} &bull; {{ showtime }}</p>
+      <p>Please select <strong>{{ tickets }}</strong> seat{{ 's' if tickets > 1 else '' }}.</p>
+      {% if features %}<div class="perk-banner d-inline-block me-2"><i class="fa-solid fa-couch me-2"></i>{{ features|join(' &bull; ')|safe }}</div>{% endif %}
+      {% if perks %}<div class="perk-banner d-inline-block"><i class="fa-solid fa-gift me-2"></i>{{ perks }} included with VIP seats</div>{% endif %}
+    </div>
+
+    <div class="screen{% if cinema_type == 'VIP' %} vip-screen{% endif %}"></div>
+    <p class="text-center text-secondary small mb-4">{{ 'BIG SCREEN' if cinema_type == 'VIP' else 'SCREEN' }}</p>
+
+    <div class="seat-wrap">
+      {% for row in rows %}
+      <div class="seat-row">
+        <div class="row-label">{{ row }}</div>
+        {% for n in range(1, cols + 1) %}
+          {% set seat = row ~ n %}
+          <button type="button" class="seat{% if cinema_type == 'VIP' %} vip{% endif %}" data-seat="{{ seat }}"
+                  {% if seat in occupied %}disabled{% endif %}>{{ n }}</button>
+          {% if n in aisles %}<div class="aisle"></div>{% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="legend text-center my-4 small">
+      <span style="background:#4a4a4a"></span>Available &nbsp;&nbsp;
+      <span style="background:#e52f45"></span>Selected &nbsp;&nbsp;
+      <span style="background:#232323"></span>Occupied
+    </div>
+
+    <div class="summary-card mx-auto" style="max-width: 500px;">
+      <div class="summary-body">
+        <div class="summary-line"><i class="fa-solid fa-couch"></i>Seats: <strong id="seatList">None</strong></div>
+        <div class="summary-line"><i class="fa-solid fa-ticket"></i>Tickets: <strong id="seatCount">0 / {{ tickets }}</strong></div>
+        <div class="summary-total">
+          <span>Total</span>
+          <strong id="total">₱0.00</strong>
+        </div>
+
+        <form method="POST" action="{{ url_for('payment') }}" class="mt-4">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="movie_id" value="{{ movie.id }}">
+          <input type="hidden" name="cinema" value="{{ cinema }}">
+          <input type="hidden" name="cinema_type" value="{{ cinema_type }}">
+          <input type="hidden" name="date" value="{{ booking_date }}">
+          <input type="hidden" name="showtime" value="{{ showtime }}">
+          <input type="hidden" name="tickets" value="{{ tickets }}">
+          <input type="hidden" name="seat_numbers" id="seatNumbers" value="">
+          <button type="submit" class="btn btn-brand w-100 py-2" id="continueBtn" disabled>
+            Continue to Payment
+          </button>
+        </form>
+        <a href="{{ url_for('booking', movie_id=movie.id) }}" class="btn btn-ghost w-100 mt-2">Back</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const maxSeats = {{ tickets }};
+  const price = {{ unit_price|float }};
+  const selected = [];
+
+  const seatList = document.getElementById('seatList');
+  const seatCount = document.getElementById('seatCount');
+  const total = document.getElementById('total');
+  const seatNumbers = document.getElementById('seatNumbers');
+  const continueBtn = document.getElementById('continueBtn');
+
+  function refresh() {
+    seatList.textContent = selected.length ? selected.join(', ') : 'None';
+    seatCount.textContent = selected.length + ' / ' + maxSeats;
+    total.textContent = '₱' + (selected.length * price).toFixed(2);
+    seatNumbers.value = selected.join(',');
+    continueBtn.disabled = selected.length !== maxSeats;
+  }
+
+  document.querySelectorAll('.seat').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const seat = btn.dataset.seat;
+      const i = selected.indexOf(seat);
+
+      if (i >= 0) {
+        selected.splice(i, 1);
+        btn.classList.remove('selected');
+      } else if (selected.length < maxSeats) {
+        selected.push(seat);
+        btn.classList.add('selected');
+      }
+      refresh();
+    });
+  });
+</script>
+{% endblock %}

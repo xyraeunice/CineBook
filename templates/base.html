@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CineBook{% endblock %}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg site-nav">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" class="brand-logo">CineBook
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav me-auto ms-lg-4">
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'home' }}" href="{{ url_for('home') }}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'movies' }}" href="{{ url_for('movies') }}">Movies</a>
+        </li>
+        {% if session.user_id %}
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'my_bookings' }}" href="{{ url_for('my_bookings') }}">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint == 'profile' }}" href="{{ url_for('profile') }}">My Profile</a>
+        </li>
+        {% endif %}
+        {% if session.is_admin %}
+        <li class="nav-item">
+          <a class="nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin') }}" href="{{ url_for('admin_dashboard') }}">
+            <i class="fa-solid fa-gauge-high me-1"></i>Admin
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+
+      <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+        {% if session.user_id %}
+          <span class="text-secondary me-2">Hi, {{ session.given_name }}</span>
+          <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm px-3">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm px-3">Login</a>
+          <a href="{{ url_for('register') }}" class="btn btn-brand btn-sm px-3">Register</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer class="site-footer footer-pro">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <a class="navbar-brand d-inline-flex align-items-center mb-3" href="{{ url_for('home') }}">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" class="brand-logo">
+          <span style="color:#fff; font-weight:700; font-size:22px;">CineBook</span>
+        </a>
+        <p>Your movie, your seat. Book tickets for the latest movies in your favorite mall cinemas, anytime and anywhere.</p>
+      </div>
+
+      <div class="col-6 col-lg-2">
+        <h6>Explore</h6>
+        <ul>
+          <li><a href="{{ url_for('home') }}">Home</a></li>
+          <li><a href="{{ url_for('movies') }}">All Movies</a></li>
+          {% if session.user_id %}
+          <li><a href="{{ url_for('my_bookings') }}">My Bookings</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <h6>Our Cinemas</h6>
+        <ul>
+          <li><a href="{{ url_for('movies') }}">SM Manila</a></li>
+          <li><a href="{{ url_for('movies') }}">Robinsons Manila</a></li>
+          <li><a href="{{ url_for('movies') }}">Ayala Malls Manila Bay</a></li>
+        </ul>
+      </div>
+
+      <div class="col-lg-3">
+        <h6>Account</h6>
+        <ul>
+          {% if session.user_id %}
+          <li><a href="{{ url_for('my_bookings') }}">My Tickets</a></li>
+          <li><a href="{{ url_for('profile') }}">My Profile</a></li>
+          <li><a href="{{ url_for('logout') }}">Logout</a></li>
+          {% else %}
+          <li><a href="{{ url_for('login') }}">Login</a></li>
+          <li><a href="{{ url_for('register') }}">Create an Account</a></li>
+          <li><a href="{{ url_for('forgot_password') }}">Forgot Password</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      &copy; 2026 CineBook &middot; Movie Ticket Booking System
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // No spaces allowed in email and password boxes
+  document.querySelectorAll(
+    'input[name="email"], input[name="password"], input[name="confirm_password"]'
+  ).forEach(function (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+    });
+    input.addEventListener('input', function () {
+      const cleaned = this.value.replace(/\s/g, '');
+      if (cleaned !== this.value) this.value = cleaned;
+    });
+  });
+</script>
+</body>
+</html>

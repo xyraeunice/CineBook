@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - CineBook{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="container">
+
+    <div class="auth-split dark-form" style="max-width: 1000px;">
+
+      <div class="auth-side">
+        <span class="side-tag"><i class="fa-solid fa-ticket me-1"></i>JOIN CINEBOOK</span>
+        <h3>Your next movie night starts here.</h3>
+        <p>Create a free account and book your favorite movies in just a few clicks.</p>
+
+        <ul class="auth-points">
+          <li><i class="fa-solid fa-couch"></i>Choose your own seats</li>
+          <li><i class="fa-solid fa-bolt"></i>Instant booking confirmation</li>
+          <li><i class="fa-solid fa-clock-rotate-left"></i>View all your past bookings</li>
+        </ul>
+      </div>
+
+      <div class="auth-main">
+        <h2>Create an Account</h2>
+        <p class="text-secondary mb-4">Join CineBook and start booking</p>
+
+        {% if error %}
+        <div class="alert alert-danger">
+          <i class="fa-solid fa-circle-exclamation me-1"></i>{{ error }}
+        </div>
+        {% endif %}
+        {% if success %}
+        <div class="alert alert-success">
+          <i class="fa-solid fa-circle-check me-1"></i>{{ success }}
+          <a href="{{ url_for('login') }}" class="alert-link">Go to login</a>
+        </div>
+        {% endif %}
+
+        <form method="POST" id="regForm" novalidate autocomplete="off">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="given_name">Given Name</label>
+              <div class="input-group {{ 'has-error' if errors.get('given_name') }}">
+                <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                <input type="text" class="form-control" name="given_name" id="given_name"
+                       placeholder="Juan" maxlength="30" autocomplete="off"
+                       value="{{ form.get('given_name', '') }}">
+              </div>
+              <div class="field-error" id="err-given_name">{{ errors.get('given_name', '') }}</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="surname">Surname</label>
+              <div class="input-group {{ 'has-error' if errors.get('surname') }}">
+                <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                <input type="text" class="form-control" name="surname" id="surname"
+                       placeholder="Cruz" maxlength="30" autocomplete="off"
+                       value="{{ form.get('surname', '') }}">
+              </div>
+              <div class="field-error" id="err-surname">{{ errors.get('surname', '') }}</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="email">Email Address</label>
+            <div class="input-group {{ 'has-error' if errors.get('email') }}">
+              <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+              <input type="email" class="form-control" name="email" id="email"
+                     placeholder="you@example.com" maxlength="30" autocomplete="off"
+                     value="{{ form.get('email', '') }}">
+            </div>
+            <div class="field-error" id="err-email">{{ errors.get('email', '') }}</div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="phone_number">Contact Number</label>
+              <div class="input-group {{ 'has-error' if errors.get('phone_number') }}">
+                <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
+                <input type="tel" class="form-control" name="phone_number" id="phone_number"
+                       placeholder="09XXXXXXXXX" maxlength="11" inputmode="numeric" autocomplete="off"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       value="{{ form.get('phone_number', '') }}">
+              </div>
+              <div class="field-error" id="err-phone_number">{{ errors.get('phone_number', '') }}</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="date_of_birth">Date of Birth</label>
+              <div class="input-group {{ 'has-error' if errors.get('date_of_birth') }}">
+                <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                <input type="date" class="form-control" name="date_of_birth" id="date_of_birth"
+                       max="{{ (today[:4]|int - min_age|default(18)) ~ today[4:] }}" autocomplete="off"
+                       value="{{ form.get('date_of_birth', '') }}">
+              </div>
+              <div class="form-text">You must be at least {{ min_age|default(18) }} years old to register.</div>
+              <div class="field-error" id="err-date_of_birth">{{ errors.get('date_of_birth', '') }}</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-group {{ 'has-error' if errors.get('password') }}">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" name="password" id="password"
+                     maxlength="30" autocomplete="new-password">
+              <button type="button" class="btn toggle-pass" data-target="password">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="field-error" id="err-password">{{ errors.get('password', '') }}</div>
+            <ul class="rules">
+              <li id="r-len"><i class="fa-regular fa-circle"></i>8 to 30 characters</li>
+              <li id="r-up"><i class="fa-regular fa-circle"></i>One uppercase letter</li>
+              <li id="r-low"><i class="fa-regular fa-circle"></i>One lowercase letter</li>
+              <li id="r-num"><i class="fa-regular fa-circle"></i>One number</li>
+              <li id="r-space"><i class="fa-regular fa-circle"></i>No spaces</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="confirm_password">Confirm Password</label>
+            <div class="input-group {{ 'has-error' if errors.get('confirm_password') }}">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" name="confirm_password" id="confirm_password"
+                     maxlength="30" autocomplete="new-password">
+              <button type="button" class="btn toggle-pass" data-target="confirm_password">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="field-error" id="err-confirm_password">{{ errors.get('confirm_password', '') }}</div>
+            <ul class="rules">
+              <li id="r-match"><i class="fa-regular fa-circle"></i>Passwords match</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="btn btn-brand w-100 py-2">
+            <i class="fa-solid fa-user-plus me-1"></i>Register
+          </button>
+        </form>
+
+        <div class="auth-divider">or</div>
+
+        <p class="text-center text-secondary mb-0">
+          Already have an account?
+          <a href="{{ url_for('login') }}" class="text-brand fw-semibold">Login</a>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<script>
+  // No spaces allowed in the name boxes
+  ['given_name', 'surname'].forEach(function (id) {
+    const input = document.getElementById(id);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+    });
+    input.addEventListener('input', function () {
+      const cleaned = this.value.replace(/\s/g, '');
+      if (cleaned !== this.value) this.value = cleaned;
+    });
+  });
+
+  // Show / hide password
+  document.querySelectorAll('.toggle-pass').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(btn.dataset.target);
+      const icon = btn.querySelector('i');
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      icon.className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  });
+
+  // Live password checklist
+  const pw = document.getElementById('password');
+  const cf = document.getElementById('confirm_password');
+
+  function mark(id, ok) {
+    const li = document.getElementById(id);
+    li.classList.toggle('ok', ok);
+    li.querySelector('i').className = ok ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle';
+  }
+
+  function checklist() {
+    const v = pw.value;
+    mark('r-len', v.length >= 8 && v.length <= 30);
+    mark('r-up', /[A-Z]/.test(v));
+    mark('r-low', /[a-z]/.test(v));
+    mark('r-num', /[0-9]/.test(v));
+    mark('r-space', v.length > 0 && !/\s/.test(v));
+    mark('r-match', v.length > 0 && v === cf.value);
+  }
+
+  pw.addEventListener('input', checklist);
+  cf.addEventListener('input', checklist);
+  checklist();
+
+  // Date of birth: only people who are at least MIN_AGE can register.
+  // Later dates are greyed out in the calendar.
+  const MIN_AGE = {{ min_age|default(18) }};
+  const dob = document.getElementById('date_of_birth');
+  const dobError = document.getElementById('err-date_of_birth');
+
+  function localISO(d) {
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // The latest allowed birthdate: today, MIN_AGE years ago (Feb 29 becomes Feb 28).
+  const now = new Date();
+  const latest = new Date(now.getFullYear() - MIN_AGE, now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear() - MIN_AGE, now.getMonth() + 1, 0).getDate();
+  latest.setDate(Math.min(now.getDate(), lastDay));
+  dob.max = localISO(latest);
+
+  // Returns the reason the typed date is not allowed, or '' when it is fine.
+  function dobProblem() {
+    if (dob.value === '') return '';
+    if (dob.value >= localISO(now)) return 'Date of birth cannot be today or in the future.';
+    if (dob.value > dob.max) return 'You must be at least ' + MIN_AGE + ' years old to register.';
+    return '';
+  }
+
+  function showDobError(message) {
+    dob.closest('.input-group').classList.toggle('has-error', message !== '');
+    dobError.textContent = message;
+  }
+
+  function checkDob() {
+    const problem = dobProblem();
+    if (problem) {
+      dob.value = '';
+      showDobError(problem);
+    } else if (dob.value !== '') {
+      showDobError('');
+    }
+  }
+
+  dob.addEventListener('change', checkDob);
+  dob.addEventListener('input', checkDob);
+
+  document.getElementById('regForm').addEventListener('submit', function (e) {
+    const problem = dobProblem();
+    if (problem) {
+      e.preventDefault();
+      dob.value = '';
+      showDobError(problem);
+      dob.focus();
+    }
+  });
+
+  // Walang harang sa pag-submit. Ang server ang magsusuri at magki-clear ng form kapag may mali.
+  // Kapag bumalik ang pahina gamit ang Back button, i-reset ang form para walang natirang laman.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+      document.getElementById('regForm').reset();
+      checklist();
+    }
+  });
+</script>
+{% endblock %}

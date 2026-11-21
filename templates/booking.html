@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Book {{ movie.title }} - CineBook{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+    <div class="row g-5">
+
+      <div class="col-lg-4">
+        <div class="summary-card">
+          <img src="{{ url_for('static', filename='posters/' ~ movie.poster) }}" alt="{{ movie.title }}">
+          <div class="summary-body">
+            <h4>{{ movie.title }}</h4>
+            <div class="summary-line"><i class="fa-solid fa-film"></i>{{ movie.genre }}</div>
+            <div class="summary-line"><i class="fa-regular fa-clock"></i>{{ movie.duration }} minutes</div>
+            <div class="summary-total">
+              <span>Ticket Price</span>
+              <strong>₱{{ "%.0f"|format(movie.price) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <p class="section-label">BOOK YOUR TICKETS</p>
+        <h2 class="mb-4">Choose your schedule</h2>
+
+        <div class="auth-card dark-form">
+          <form method="POST" action="{{ url_for('seat_selection') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+
+            <div class="mb-3">
+              <label class="form-label">Cinema Type</label>
+              {% for key, t in cinema_types.items() %}
+              <label class="pay-option">
+                <input type="radio" name="cinema_type" value="{{ key }}" required
+                       {% if loop.first %}checked{% endif %}>
+                <i class="fa-solid {{ 'fa-crown' if key == 'VIP' else 'fa-film' }}"></i>
+                <span>{{ t.label }} &mdash; ₱{{ "%.0f"|format(movie.price + t.extra) }} / ticket
+                  {% if t.features %}<small class="d-block text-secondary">{{ t.features|join(' &bull; ')|safe }}</small>{% endif %}
+                  {% if t.perks %}<small class="d-block text-warning">Includes {{ t.perks }}</small>{% endif %}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="cinema">Cinema</label>
+              <select class="form-select" name="cinema" id="cinema" required>
+                <option value="">Select a cinema</option>
+                {% for c in cinemas %}
+                <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="date">Date</label>
+                <input type="date" class="form-control" name="date" id="date"
+                       min="{{ today }}" value="{{ today }}" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" for="showtime">Showtime</label>
+                <select class="form-select" name="showtime" id="showtime" required>
+                  <option value="">Select a showtime</option>
+                  {% for t in showtimes %}
+                  <option value="{{ t }}">{{ t }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text text-warning d-none" id="showtimeNote"></div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label" for="tickets">Number of Tickets (max 6)</label>
+              <input type="number" class="form-control" name="tickets" id="tickets"
+                     min="1" max="6" value="1" required>
+            </div>
+
+            <button type="submit" class="btn btn-brand btn-lg">Continue to Seat Selection</button>
+            <a href="{{ url_for('movie_details', movie_id=movie.id) }}" class="btn btn-ghost btn-lg ms-2">Back</a>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  // Showtimes that already started today can't be booked.
+  const dateInput = document.getElementById('date');
+  const showtimeSelect = document.getElementById('showtime');
+  const showtimeNote = document.getElementById('showtimeNote');
+
+  function toMinutes(label) {
+    const m = label.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+    if (!m) return null;
+    let h = parseInt(m[1], 10) % 12;
+    if (m[3].toUpperCase() === 'PM') h += 12;
+    return h * 60 + parseInt(m[2], 10);
+  }
+
+  function updateShowtimes() {
+    const now = new Date();
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    const isToday = dateInput.value === todayStr;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    let available = 0;
+
+    Array.from(showtimeSelect.options).forEach(function (opt) {
+      if (!opt.value) return;
+      const passed = isToday && toMinutes(opt.value) <= nowMinutes;
+      opt.disabled = passed;
+      opt.textContent = passed ? opt.value + ' (already started)' : opt.value;
+      if (!passed) available++;
+    });
+
+    if (showtimeSelect.selectedOptions.length && showtimeSelect.selectedOptions[0].disabled) {
+      showtimeSelect.value = '';
+    }
+
+    if (isToday && available === 0) {
+      showtimeNote.textContent = 'No more showtimes today. Please choose another date.';
+      showtimeNote.classList.remove('d-none');
+    } else if (isToday) {
+      showtimeNote.textContent = 'Showtimes that already started are not available.';
+      showtimeNote.classList.remove('d-none');
+    } else {
+      showtimeNote.classList.add('d-none');
+    }
+  }
+
+  dateInput.addEventListener('change', updateShowtimes);
+  updateShowtimes();
+</script>
+{% endblock %}

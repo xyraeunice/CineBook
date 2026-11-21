@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users - CineBook Admin{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>Manage Users</h2>
+      </div>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_users', q=q or None) }}" class="{{ 'active' if not role }}">All ({{ counts.total }})</a>
+      <a href="{{ url_for('admin_users', role='customer', q=q or None) }}" class="{{ 'active' if role == 'customer' }}">Customers ({{ counts.customers }})</a>
+      <a href="{{ url_for('admin_users', role='admin', q=q or None) }}" class="{{ 'active' if role == 'admin' }}">Admins ({{ counts.admins }})</a>
+      <a href="{{ url_for('admin_users', role='disabled', q=q or None) }}" class="{{ 'active' if role == 'disabled' }}">Disabled ({{ counts.disabled }})</a>
+    </div>
+
+    <form method="GET" class="dark-form mb-3">
+      <input type="hidden" name="role" value="{{ role }}">
+      <div class="input-group" style="max-width: 520px;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" class="form-control" name="q" value="{{ q }}"
+               placeholder="Search name, email or phone number">
+        <button type="submit" class="btn btn-brand">Search</button>
+      </div>
+    </form>
+
+    <div class="admin-panel" style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Phone</th>
+            <th>Role</th><th>Status</th><th>Bookings</th><th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>#{{ u.id }}</td>
+            <td>
+              {{ u.given_name }} {{ u.surname }}
+              {% if u.id == session.get('user_id') %}<span class="pill pill-yellow">You</span>{% endif %}
+            </td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.phone_number or '—' }}</td>
+            <td>
+              {% if u.is_admin %}
+              <span class="pill pill-yellow">Admin</span>
+              {% else %}
+              <small class="text-secondary">Customer</small>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}
+              <span class="pill pill-green">Active</span>
+              {% else %}
+              <span class="pill pill-red">Disabled</span>
+              {% endif %}
+            </td>
+            <td>{{ u.booking_count }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('admin_user_detail', user_id=u.id) }}" class="btn btn-ghost btn-sm">
+                <i class="fa-solid fa-pen me-1"></i>View / Edit
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="text-center text-secondary py-4">No users found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% set page_endpoint = 'admin_users' %}
+    {% include '_pagination.html' %}
+
+  </div>
+</section>
+{% endblock %}

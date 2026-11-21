@@ -1,0 +1,12 @@
+{# Needs: page, pages, page_endpoint, page_args #}
+{% if pages > 1 %}
+<nav class="pager">
+  {% if page > 1 %}
+  <a class="btn btn-ghost btn-sm" href="{{ url_for(page_endpoint, page=page - 1, **page_args) }}">&laquo; Prev</a>
+  {% endif %}
+  <span class="text-secondary">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+  <a class="btn btn-ghost btn-sm" href="{{ url_for(page_endpoint, page=page + 1, **page_args) }}">Next &raquo;</a>
+  {% endif %}
+</nav>
+{% endif %}

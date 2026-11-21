@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Movie - CineBook Admin{% endblock %}
+
+{% block content %}
+<section class="page">
+  <div class="container">
+
+    <div class="section-head">
+      <div>
+        <p class="section-label">ADMIN</p>
+        <h2>{{ 'Edit Movie' if mode == 'edit' else 'Add Movie' }}</h2>
+      </div>
+    </div>
+
+    {% include 'admin_nav.html' %}
+
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="auth-card dark-form">
+
+          {% if error %}
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>{{ error }}
+          </div>
+          {% endif %}
+
+          <form method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label" for="title">Title</label>
+                <input type="text" class="form-control" name="title" id="title"
+                       maxlength="100" value="{{ movie.get('title', '') }}" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label" for="status">Status</label>
+                <select class="form-select" name="status" id="status" required>
+                  <option value="now_showing" {{ 'selected' if movie.get('status') == 'now_showing' }}>Now Showing</option>
+                  <option value="coming_soon" {{ 'selected' if movie.get('status') == 'coming_soon' }}>Coming Soon</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="genre">Genre</label>
+              <input type="text" class="form-control" name="genre" id="genre"
+                     maxlength="100" placeholder="Action &bull; Adventure"
+                     value="{{ movie.get('genre', '') }}" required>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label" for="duration">Duration (minutes)</label>
+                <input type="number" class="form-control" name="duration" id="duration"
+                       min="1" max="600" value="{{ movie.get('duration', '') }}" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label" for="rating">Rating (0 - 10)</label>
+                <input type="number" class="form-control" name="rating" id="rating"
+                       min="0" max="10" step="0.1" value="{{ movie.get('rating', '') }}" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label" for="price">Ticket Price (₱)</label>
+                <input type="number" class="form-control" name="price" id="price"
+                       min="0" max="10000" step="1" value="{{ movie.get('price', '') }}" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="description">Description</label>
+              <textarea class="form-control" name="description" id="description" rows="5"
+                        maxlength="2000" required>{{ movie.get('description', '') }}</textarea>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label">Showtimes</label>
+              <div class="form-text mb-2">Customers can only book the times listed here. Add as many as you need.</div>
+              <div id="showtimeRows">
+                {% for t in showtime_rows %}
+                <div class="input-group mb-2 showtime-row" style="max-width: 280px;">
+                  <input type="time" class="form-control" name="showtimes" value="{{ t|time24 }}" required>
+                  <button type="button" class="btn btn-ghost remove-time" title="Remove this showtime">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                {% endfor %}
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" id="addTime">
+                <i class="fa-solid fa-plus me-1"></i>Add showtime
+              </button>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label" for="poster">
+                Poster {% if mode == 'edit' %}(leave empty to keep the current one){% endif %}
+              </label>
+              {% if mode == 'edit' and movie.get('poster') %}
+              <div class="mb-2">
+                <img class="poster-preview" src="{{ url_for('static', filename='posters/' ~ movie.poster) }}" alt="Current poster">
+              </div>
+              {% endif %}
+              <input type="file" class="form-control" name="poster" id="poster"
+                     accept=".jpg,.jpeg,.png,.webp" {{ 'required' if mode == 'add' }}>
+              <div class="form-text">JPG, PNG or WEBP, up to 5 MB.</div>
+            </div>
+
+            <button type="submit" class="btn btn-brand px-4">
+              <i class="fa-solid fa-floppy-disk me-1"></i>{{ 'Save Changes' if mode == 'edit' else 'Add Movie' }}
+            </button>
+            <a href="{{ url_for('admin_movies') }}" class="btn btn-ghost ms-2">Cancel</a>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<script>
+  const timeRows = document.getElementById('showtimeRows');
+
+  function bindRemove(row) {
+    row.querySelector('.remove-time').addEventListener('click', function () {
+      if (timeRows.children.length > 1) {
+        row.remove();
+      } else {
+        row.querySelector('input').value = '';
+      }
+    });
+  }
+
+  Array.from(timeRows.children).forEach(bindRemove);
+
+  document.getElementById('addTime').addEventListener('click', function () {
+    const row = timeRows.firstElementChild.cloneNode(true);
+    row.querySelector('input').value = '';
+    timeRows.appendChild(row);
+    bindRemove(row);
+    row.querySelector('input').focus();
+  });
+</script>
+{% endblock %}
